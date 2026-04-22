@@ -9,5 +9,5 @@ export default withAuth({
 
 // Apply only to these routes — login, register, and pricing remain public
 export const config = {
-  matcher: ["/", "/dashboard/:path*"],
+  matcher: ["/", "/dashboard/:path*", "/billing"],
 };
