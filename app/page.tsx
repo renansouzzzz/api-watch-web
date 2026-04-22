@@ -9,6 +9,15 @@ import Navbar from "./components/Navbar";
 
 const REFRESH_INTERVAL_MS = 30_000;
 
+function isSafeUrl(url: string): boolean {
+  try {
+    const { protocol } = new URL(url);
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export default function DashboardPage() {
   const { data: session } = useSession();
   const [data, setData] = useState<DashboardSummary | null>(null);
@@ -25,6 +34,7 @@ export default function DashboardPage() {
 
   // Delete state
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   async function load() {
     try {
@@ -202,9 +212,13 @@ export default function DashboardPage() {
                       <tr key={ep.id} className="border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors">
                         <td className="px-5 py-3 font-medium text-gray-100">{ep.name}</td>
                         <td className="px-5 py-3 text-gray-400 max-w-xs truncate">
-                          <a href={ep.url} target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors">
-                            {ep.url}
-                          </a>
+                          {isSafeUrl(ep.url) ? (
+                            <a href={ep.url} target="_blank" rel="noreferrer noopener" className="hover:text-blue-400 transition-colors">
+                              {ep.url}
+                            </a>
+                          ) : (
+                            <span title="Invalid URL">{ep.url}</span>
+                          )}
                         </td>
                         <td className="px-5 py-3">
                           <StatusBadge isUp={ep.isUp} />
@@ -222,7 +236,7 @@ export default function DashboardPage() {
                         </td>
                         <td className="px-5 py-3">
                           <button
-                            onClick={() => handleDelete(ep.id)}
+                            onClick={() => setConfirmDeleteId(ep.id)}
                             disabled={deletingId === ep.id}
                             className="text-gray-500 hover:text-red-400 transition-colors text-xs disabled:opacity-40"
                           >
@@ -248,6 +262,29 @@ export default function DashboardPage() {
           Auto-refreshes every {REFRESH_INTERVAL_MS / 1000}s
         </p>
       </div>
+
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 w-80 shadow-xl">
+            <h2 className="text-white font-semibold text-base mb-2">Delete endpoint?</h2>
+            <p className="text-gray-400 text-sm mb-6">This action cannot be undone.</p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="px-4 py-2 text-sm rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { handleDelete(confirmDeleteId); setConfirmDeleteId(null); }}
+                className="px-4 py-2 text-sm rounded-lg bg-red-600 hover:bg-red-500 text-white transition-colors"
+              >
+                Yes, delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
